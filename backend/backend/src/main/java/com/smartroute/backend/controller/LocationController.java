@@ -8,6 +8,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/locations")
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "https://smart-route-frontend.onrender.com"
+        },
+        methods = {
+                RequestMethod.GET,
+                RequestMethod.OPTIONS
+        }
+)
 public class LocationController {
 
     private final LocationRepository locationRepository;
