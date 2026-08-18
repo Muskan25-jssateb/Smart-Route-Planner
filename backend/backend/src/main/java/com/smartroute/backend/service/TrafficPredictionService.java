@@ -12,8 +12,14 @@ public class TrafficPredictionService {
 
     public TrafficPredictionService() {
 
+        String mlServiceUrl =
+                System.getenv().getOrDefault(
+                        "ML_SERVICE_URL",
+                        "http://127.0.0.1:8000"
+                );
+
         this.restClient = RestClient.builder()
-                .baseUrl("http://127.0.0.1:8000")
+                .baseUrl(mlServiceUrl)
                 .build();
     }
 
@@ -29,6 +35,7 @@ public class TrafficPredictionService {
                         .body(TrafficPredictionResponse.class);
 
         if (response == null) {
+
             throw new RuntimeException(
                     "Traffic prediction service returned no response"
             );
