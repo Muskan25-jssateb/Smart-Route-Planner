@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./index.css";
 import MapView from "./components/MapView";
 
@@ -9,42 +9,18 @@ function App() {
     const [hour, setHour] = useState(12);
     const [dayOfWeek, setDayOfWeek] = useState(1);
 
-    const [locations, setLocations] = useState([]);
     const [route, setRoute] = useState(null);
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        const fetchLocations = async () => {
-            try {
-                const response = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/locations`
-                );
-
-                if (!response.ok) {
-                    throw new Error("Unable to load locations.");
-                }
-
-                const data = await response.json();
-
-                setLocations(data);
-            } catch (err) {
-                setError(err.message);
-            }
-        };
-
-        fetchLocations();
-    }, []);
-
     const findRoute = async () => {
         if (!source || !destination) {
-            setError("Please select both source and destination.");
+            setError("Please enter both source and destination.");
             return;
         }
 
         if (source === destination) {
-            setError("Source and destination must be different.");
+            setError("Source and destination cannot be the same.");
             return;
         }
 
@@ -71,9 +47,7 @@ function App() {
             );
 
             if (!response.ok) {
-                throw new Error(
-                    "Unable to calculate the route."
-                );
+                throw new Error("Unable to calculate route.");
             }
 
             const data = await response.json();
@@ -81,208 +55,130 @@ function App() {
             setRoute(data);
 
         } catch (err) {
-            setError(err.message);
+            setError(
+                err.message ||
+                "Something went wrong while calculating the route."
+            );
         } finally {
             setLoading(false);
         }
     };
 
-    const getTrafficClass = () => {
-        if (!route) {
-            return "";
-        }
+    const getTrafficClass = (trafficLevel) => {
+        if (!trafficLevel) return "";
 
-        if (route.trafficLevel === "LOW") {
-            return "traffic-low";
-        }
-
-        if (route.trafficLevel === "MEDIUM") {
-            return "traffic-medium";
-        }
-
-        return "traffic-high";
-    };
-
-    const getTimeSaved = () => {
-        if (
-            !route ||
-            !route.alternatives ||
-            route.alternatives.length === 0
-        ) {
-            return 0;
-        }
-
-        const fastestAlternative =
-            route.alternatives[0];
-
-        return (
-            Number(
-                fastestAlternative.estimatedTravelTime
-            ) -
-            Number(
-                route.estimatedTravelTime
-            )
-        );
+        return trafficLevel.toLowerCase();
     };
 
     return (
         <div className="app">
 
-            {/* HEADER */}
+            {/* ================= HEADER ================= */}
 
             <header className="header">
-
                 <div className="header-content">
 
                     <div>
-
-                        <h1>
-                            Smart Route Planner
-                        </h1>
+                        <div className="brand">
+                            <span className="brand-icon">🚗</span>
+                            <span>Smart Route Planner</span>
+                        </div>
 
                         <p>
-                            AI-powered traffic-aware
-                            route optimization
+                            AI-powered traffic-aware route optimization
                         </p>
-
                     </div>
 
-                    <div className="header-badge">
-                        AI + Dijkstra
+                    <div className="status-badge">
+                        <span className="status-dot"></span>
+                        System Online
                     </div>
 
                 </div>
-
             </header>
 
+            {/* ================= MAIN ================= */}
 
             <main className="container">
 
-                {/* ROUTE INPUT */}
+                {/* ================= ROUTE INPUT ================= */}
 
                 <section className="route-card">
 
                     <div className="section-heading">
-
                         <div>
-
-                            <h2>
-                                Plan Your Route
-                            </h2>
+                            <h2>Plan Your Route</h2>
 
                             <p>
-                                Choose your locations and
-                                travel conditions.
+                                Find the fastest route based on traffic,
+                                weather and travel conditions.
                             </p>
+                        </div>
+                    </div>
 
+                    <div className="route-inputs">
+
+                        <div className="input-group">
+                            <label>Source</label>
+
+                            <div className="input-wrapper">
+                                <span className="input-icon source-icon">
+                                    ●
+                                </span>
+
+                                <input
+                                    value={source}
+                                    onChange={(e) =>
+                                        setSource(
+                                            e.target.value.toUpperCase()
+                                        )
+                                    }
+                                    placeholder="Example: A"
+                                    maxLength={1}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="route-arrow">
+                            ↓
+                        </div>
+
+                        <div className="input-group">
+                            <label>Destination</label>
+
+                            <div className="input-wrapper">
+                                <span className="input-icon destination-icon">
+                                    ●
+                                </span>
+
+                                <input
+                                    value={destination}
+                                    onChange={(e) =>
+                                        setDestination(
+                                            e.target.value.toUpperCase()
+                                        )
+                                    }
+                                    placeholder="Example: H"
+                                    maxLength={1}
+                                />
+                            </div>
                         </div>
 
                     </div>
 
+                    {/* ================= CONDITIONS ================= */}
 
-                    {/* SOURCE + DESTINATION */}
-
-                    <div className="input-row">
-
-                        <div className="input-group">
-
-                            <label>
-                                Source
-                            </label>
-
-                            <select
-                                value={source}
-                                onChange={(e) =>
-                                    setSource(
-                                        e.target.value
-                                    )
-                                }
-                            >
-
-                                <option value="">
-                                    Select source
-                                </option>
-
-                                {locations.map(
-                                    (location) => (
-
-                                        <option
-                                            key={location.id}
-                                            value={
-                                                location.name
-                                            }
-                                        >
-                                            {location.name}
-                                        </option>
-
-                                    )
-                                )}
-
-                            </select>
-
-                        </div>
-
+                    <div className="conditions">
 
                         <div className="input-group">
-
-                            <label>
-                                Destination
-                            </label>
-
-                            <select
-                                value={destination}
-                                onChange={(e) =>
-                                    setDestination(
-                                        e.target.value
-                                    )
-                                }
-                            >
-
-                                <option value="">
-                                    Select destination
-                                </option>
-
-                                {locations.map(
-                                    (location) => (
-
-                                        <option
-                                            key={location.id}
-                                            value={
-                                                location.name
-                                            }
-                                        >
-                                            {location.name}
-                                        </option>
-
-                                    )
-                                )}
-
-                            </select>
-
-                        </div>
-
-                    </div>
-
-
-                    {/* CONDITIONS */}
-
-                    <div className="input-row">
-
-                        <div className="input-group">
-
-                            <label>
-                                Weather
-                            </label>
+                            <label>Weather</label>
 
                             <select
                                 value={weather}
                                 onChange={(e) =>
-                                    setWeather(
-                                        e.target.value
-                                    )
+                                    setWeather(e.target.value)
                                 }
                             >
-
                                 <option value="Sunny">
                                     ☀️ Sunny
                                 </option>
@@ -294,17 +190,11 @@ function App() {
                                 <option value="Rain">
                                     🌧️ Rain
                                 </option>
-
                             </select>
-
                         </div>
 
-
                         <div className="input-group">
-
-                            <label>
-                                Travel Hour
-                            </label>
+                            <label>Hour</label>
 
                             <input
                                 type="number"
@@ -312,368 +202,225 @@ function App() {
                                 max="23"
                                 value={hour}
                                 onChange={(e) =>
-                                    setHour(
-                                        e.target.value
-                                    )
+                                    setHour(e.target.value)
                                 }
                             />
-
                         </div>
 
-
                         <div className="input-group">
-
-                            <label>
-                                Day
-                            </label>
+                            <label>Day</label>
 
                             <select
                                 value={dayOfWeek}
                                 onChange={(e) =>
-                                    setDayOfWeek(
-                                        e.target.value
-                                    )
+                                    setDayOfWeek(e.target.value)
                                 }
                             >
-
-                                <option value="0">
-                                    Monday
-                                </option>
-
-                                <option value="1">
-                                    Tuesday
-                                </option>
-
-                                <option value="2">
-                                    Wednesday
-                                </option>
-
-                                <option value="3">
-                                    Thursday
-                                </option>
-
-                                <option value="4">
-                                    Friday
-                                </option>
-
-                                <option value="5">
-                                    Saturday
-                                </option>
-
-                                <option value="6">
-                                    Sunday
-                                </option>
-
+                                <option value="0">Monday</option>
+                                <option value="1">Tuesday</option>
+                                <option value="2">Wednesday</option>
+                                <option value="3">Thursday</option>
+                                <option value="4">Friday</option>
+                                <option value="5">Saturday</option>
+                                <option value="6">Sunday</option>
                             </select>
-
                         </div>
 
                     </div>
 
+                    {/* ================= BUTTON ================= */}
 
                     <button
-                        className="route-button"
+                        className="find-route-button"
                         onClick={findRoute}
                         disabled={loading}
                     >
-
-                        {loading
-                            ? "Finding Best Route..."
-                            : "Find Best Route"}
-
+                        {loading ? (
+                            <>
+                                <span className="spinner"></span>
+                                Finding Best Route...
+                            </>
+                        ) : (
+                            <>
+                                Find Best Route
+                                <span>→</span>
+                            </>
+                        )}
                     </button>
 
-
                     {error && (
-
                         <div className="error">
-                            {error}
+                            ⚠️ {error}
                         </div>
-
                     )}
 
                 </section>
 
-
-                {/* RESULTS */}
+                {/* ================= RESULT ================= */}
 
                 {route && (
-
                     <section className="result-card">
-
-                        {/* RESULT HEADER */}
 
                         <div className="result-header">
 
                             <div>
-
-                                <h2>
-                                    Recommended Route
-                                </h2>
+                                <h2>Recommended Route</h2>
 
                                 <p>
-                                    AI-optimized for current
-                                    travel conditions
+                                    Fastest traffic-aware route found
                                 </p>
-
                             </div>
 
                             <div
-                                className={`traffic-badge ${getTrafficClass()}`}
+                                className={`traffic-badge ${getTrafficClass(
+                                    route.trafficLevel
+                                )}`}
                             >
-
+                                <span className="traffic-dot"></span>
                                 {route.trafficLevel}
-                                {" "}TRAFFIC
-
                             </div>
 
                         </div>
 
+                        {/* ================= ROUTE PATH ================= */}
 
-                        {/* BEST ROUTE */}
+                        <div className="route-display">
 
-                        <div className="route-path">
+                            <div className="route-endpoint">
+                                <span className="endpoint-dot start"></span>
 
-                            {route.path.map(
-                                (location, index) => (
+                                <strong>
+                                    {route.source}
+                                </strong>
+                            </div>
 
-                                    <span
-                                        key={index}
-                                        className="route-location"
-                                    >
+                            <div className="route-line">
+                                <span></span>
+                            </div>
 
-                                        {location}
+                            <div className="route-stops">
 
-                                        {index <
-                                            route.path.length - 1 && (
+                                {route.path &&
+                                    route.path
+                                        .slice(1, -1)
+                                        .map((location, index) => (
+                                            <div
+                                                className="route-stop"
+                                                key={`${location}-${index}`}
+                                            >
+                                                <span>
+                                                    {location}
+                                                </span>
+                                            </div>
+                                        ))}
 
-                                            <span className="arrow">
-                                                →
-                                            </span>
+                            </div>
 
-                                        )}
+                            <div className="route-line">
+                                <span></span>
+                            </div>
 
-                                    </span>
+                            <div className="route-endpoint">
+                                <span className="endpoint-dot end"></span>
 
-                                )
-                            )}
+                                <strong>
+                                    {route.destination}
+                                </strong>
+                            </div>
 
                         </div>
 
+                        {/* ================= MAP ================= */}
 
-                        {/* STATS */}
+                        <div className="map-container">
+                            <MapView route={route.path} />
+                        </div>
+
+                        {/* ================= STATISTICS ================= */}
 
                         <div className="stats">
 
                             <div className="stat">
-
-                                <span>
-                                    Distance
-                                </span>
-
-                                <strong>
-                                    {Number(
-                                        route.totalDistance
-                                    ).toFixed(1)} km
-                                </strong>
-
-                            </div>
-
-
-                            <div className="stat">
-
-                                <span>
-                                    Normal Time
-                                </span>
-
-                                <strong>
-                                    {Number(
-                                        route.baseTravelTime
-                                    ).toFixed(1)} min
-                                </strong>
-
-                            </div>
-
-
-                            <div className="stat">
-
-                                <span>
-                                    Predicted Time
-                                </span>
-
-                                <strong>
-                                    {Number(
-                                        route.estimatedTravelTime
-                                    ).toFixed(1)} min
-                                </strong>
-
-                            </div>
-
-
-                            <div className="stat">
-
-                                <span>
-                                    Traffic Delay
-                                </span>
-
-                                <strong>
-                                    +
-                                    {Number(
-                                        route.trafficIncreasePercentage
-                                    ).toFixed(1)}
-                                    %
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-
-                        {/* SAVINGS */}
-
-                        {route.alternatives &&
-                            route.alternatives.length > 0 && (
-
-                            <div className="savings-card">
-
-                                <strong>
-                                    ⚡ Faster than alternatives
-                                </strong>
-
-                                <span>
-                                    You save{" "}
-                                    {getTimeSaved().toFixed(1)}
-                                    {" "}minutes with the
-                                    recommended route.
-                                </span>
-
-                            </div>
-
-                        )}
-
-
-                        {/* ALTERNATIVE ROUTES */}
-
-                        {route.alternatives &&
-                            route.alternatives.length > 0 && (
-
-                            <div className="alternatives">
-
-                                <div className="alternatives-heading">
-
-                                    <h3>
-                                        Alternative Routes
-                                    </h3>
-
-                                    <span>
-                                        Compared by predicted
-                                        travel time
-                                    </span>
-
+                                <div className="stat-icon">
+                                    📍
                                 </div>
 
+                                <div>
+                                    <span>
+                                        Distance
+                                    </span>
 
-                                {route.alternatives.map(
-                                    (alternative, index) => (
-
-                                        <div
-                                            className="alternative-route"
-                                            key={index}
-                                        >
-
-                                            <div className="alternative-main">
-
-                                                <div className="alternative-number">
-                                                    {index + 1}
-                                                </div>
-
-                                                <div>
-
-                                                    <div className="alternative-path">
-
-                                                        {alternative.path.join(
-                                                            " → "
-                                                        )}
-
-                                                    </div>
-
-                                                    <div className="alternative-details">
-
-                                                        {Number(
-                                                            alternative.totalDistance
-                                                        ).toFixed(1)}
-                                                        {" "}km
-
-                                                        <span>
-                                                            •
-                                                        </span>
-
-                                                        {Number(
-                                                            alternative.estimatedTravelTime
-                                                        ).toFixed(1)}
-                                                        {" "}min
-
-                                                    </div>
-
-                                                </div>
-
-                                            </div>
-
-
-                                            <div className="alternative-time">
-
-                                                {Number(
-                                                    alternative.estimatedTravelTime
-                                                ).toFixed(1)}
-                                                {" "}min
-
-                                            </div>
-
-                                        </div>
-
-                                    )
-                                )}
-
+                                    <strong>
+                                        {route.totalDistance} km
+                                    </strong>
+                                </div>
                             </div>
 
-                        )}
+                            <div className="stat">
+                                <div className="stat-icon">
+                                    ⏱️
+                                </div>
 
+                                <div>
+                                    <span>
+                                        Estimated Time
+                                    </span>
 
-                        {/* WEATHER */}
+                                    <strong>
+                                        {Number(
+                                            route.estimatedTravelTime
+                                        ).toFixed(2)}{" "}
+                                        min
+                                    </strong>
+                                </div>
+                            </div>
 
-                        <div className="condition">
+                            <div className="stat">
+                                <div className="stat-icon">
+                                    🚦
+                                </div>
 
-                            <span>
-                                Weather
-                            </span>
+                                <div>
+                                    <span>
+                                        Traffic
+                                    </span>
 
-                            <strong>
-                                {route.weather}
-                            </strong>
+                                    <strong>
+                                        {route.trafficLevel}
+                                    </strong>
+                                </div>
+                            </div>
 
-                        </div>
+                            <div className="stat">
+                                <div className="stat-icon">
+                                    🌤️
+                                </div>
 
+                                <div>
+                                    <span>
+                                        Weather
+                                    </span>
 
-                        {/* MAP */}
-
-                        <div className="map-section">
-
-                            <h3>
-                                Route Map
-                            </h3>
-
-                            <MapView
-                                path={route.path}
-                                locations={locations}
-                            />
+                                    <strong>
+                                        {route.weather}
+                                    </strong>
+                                </div>
+                            </div>
 
                         </div>
 
                     </section>
-
                 )}
 
             </main>
+
+            {/* ================= FOOTER ================= */}
+
+            <footer className="footer">
+                <p>
+                    Smart Route Planner · AI-powered traffic optimization
+                </p>
+            </footer>
 
         </div>
     );
